@@ -4,3 +4,9 @@
 
 Unzip the dataset to be able to use it.
 
+
+
+git usage in RStudio: [here](https://happygitwithr.com/rstudio-git-github)
+
+
+
