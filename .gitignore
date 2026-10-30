@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+
+# Only share zip files of data
+datasets/*.tsv
+datasets/*.csv
