@@ -8,6 +8,7 @@ ncfname <- "datasets/SOCATv2026_gridded_monthly.nc"
 ncin <- nc_open(ncfname)
 
 time <- ncvar_get(ncin,"tmnth") #days since 1970-01-01
+
 lon <- ncvar_get(ncin,"xlon")
 lat <- ncvar_get(ncin,"ylat") #days since 1970-01-01
 
@@ -57,8 +58,19 @@ dim(df)
 csvpath <- "C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets"
 csvname <- "SOCAT2025_gridded_restrictedtest.csv"
 csvfile <- paste(csvpath, csvname, sep="")
-write.table(na.omit(df[1:878720,]),csvfile, row.names=FALSE, sep=",")
+write.table(na.omit(df),csvfile, row.names=FALSE, sep=",")
 
 
+
+dftime <- data.frame(
+  time = time,
+)
+
+dim(df)
+
+csvpath <- "C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets"
+csvname <- "time_grid.csv"
+csvfile <- paste(csvpath, csvname, sep="")
+write.table(na.omit(dftime),csvfile, row.names=FALSE, sep=",")
 
 
