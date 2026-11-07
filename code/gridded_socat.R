@@ -10,7 +10,7 @@ ncin <- nc_open(ncfname)
 time <- ncvar_get(ncin,"tmnth") #days since 1970-01-01
 
 lon <- ncvar_get(ncin,"xlon")
-lat <- ncvar_get(ncin,"ylat") #days since 1970-01-01
+lat <- ncvar_get(ncin,"ylat")
 
 minlon = -99.5
 maxlon =  9.5
@@ -34,7 +34,7 @@ sd_sub <- sd[lon_idx, lat_idx, , drop = FALSE]
 
 lon_sub <- lon[lon_idx]
 lat_sub <- lat[lat_idx]
-time_sub <- time
+time_sub <- time[]
 
 lonlat_time <- expand.grid(
   lon = lon_sub,
@@ -52,25 +52,5 @@ df <- data.frame(
   fco2_max = as.vector(fco2_max_sub),
   sd = as.vector(sd_sub)
 )
-
-dim(df)
-
-csvpath <- "C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets"
-csvname <- "SOCAT2025_gridded_restrictedtest.csv"
-csvfile <- paste(csvpath, csvname, sep="")
-write.table(na.omit(df),csvfile, row.names=FALSE, sep=",")
-
-
-
-dftime <- data.frame(
-  time = time,
-)
-
-dim(df)
-
-csvpath <- "C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets"
-csvname <- "time_grid.csv"
-csvfile <- paste(csvpath, csvname, sep="")
-write.table(na.omit(dftime),csvfile, row.names=FALSE, sep=",")
 
 
