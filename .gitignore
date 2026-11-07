@@ -10,3 +10,6 @@
 datasets/*.tsv
 datasets/*.csv
 datasets/*.nc
+
+#no images
+/images
