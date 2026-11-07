@@ -1,10 +1,10 @@
 library(ncdf4)
 library(CFtime)
 
-setwd("~/Documents/Politecnico di Milano/NS/Non-Parametric-Project-SOCAT-and-GOBM")
+setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project")
 
 ncin  <- nc_open("datasets/GOBM2025.nc")
-dname <- "sfco2"
+print(ncin)
 
 lon  <- ncvar_get(ncin, "lon")
 lat  <- ncvar_get(ncin, "lat")
