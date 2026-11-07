@@ -3,7 +3,10 @@
 .RData
 .Ruserdata
 
+**/.DS_Store
+
 
 # Only share zip files of data
 datasets/*.tsv
 datasets/*.csv
+datasets/*.nc
