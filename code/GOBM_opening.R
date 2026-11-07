@@ -18,6 +18,7 @@ time_idx <- 133:792
 lon_sub  <- lon[lon_idx]
 lat_sub  <- lat[lat_idx]
 time_sub <- time[time_idx]
+length(time_sub)
 
 # data subset, fill values -> NA
 fco2_array <- ncvar_get(ncin, dname)
@@ -30,14 +31,16 @@ tunits <- ncatt_get(ncin, "time", "units")
 cf     <- CFtime(tunits$value, calendar = "proleptic_gregorian", time)
 date   <- as_timestamp(cf)[time_idx]
 
+
 nc_close(ncin)
 
 # long-format data frame (lon varies fastest, then lat, then time)
-grid <- expand.grid(lon = lon_sub, lat = lat_sub, time = time_sub)
+grid <- expand.grid(lon = lon_sub, lat = lat_sub, time = 1:660)
 grid$date  <- rep(date, each = length(lon_sub) * length(lat_sub))
 grid$sfco2 <- as.vector(fco2_sub)
 
 # drop land / missing cells and save
 df <- na.omit(grid)
+df 
 write.csv(df, "datasets/GOBM2025_restricted.csv", row.names = FALSE)
-read.csv("datasets/GOBM2025_restricted.csv")
+df<-read.csv("datasets/GOBM2025_restricted.csv")
