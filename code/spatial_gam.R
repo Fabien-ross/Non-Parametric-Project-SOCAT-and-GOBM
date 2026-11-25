@@ -1,5 +1,5 @@
 setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets")
-
+setwd("~/Documents/Politecnico di Milano/NS/Non-Parametric-Project-SOCAT-and-GOBM/datasets")
 library(data.table)
 library(ggplot2)
 library(sf)
