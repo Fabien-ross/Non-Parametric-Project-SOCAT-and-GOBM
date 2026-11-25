@@ -2,6 +2,7 @@ library(ncdf4)
 library(CFtime)
 
 setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project")
+setwd("~/Documents/Politecnico di Milano/NS/Non-Parametric-Project-SOCAT-and-GOBM")
 
 ncin  <- nc_open("datasets/GOBM2025.nc")
 print(ncin)
