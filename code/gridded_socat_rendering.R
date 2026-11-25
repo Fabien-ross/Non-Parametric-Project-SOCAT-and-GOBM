@@ -13,8 +13,19 @@ df <- read.csv(filename, header=TRUE)
 lon <- read.csv("lon_grid.csv", header=TRUE)
 lat <- read.csv("lat_grid.csv", header=TRUE)
 time <- 1:660
+all_pixels <- expand.grid(
+  lon = lon[[1]],
+  lat = lat[[1]]
+)
 
-# Count the number of measure per square
+# %%%%%%%%%%%%%% Continents and islands
+missing_pixels <- anti_join(
+  all_pixels,
+  distinct(df, lon, lat),
+  by = c("lon", "lat")
+)
+
+# %%%%%%%%%%%%%% Count the number of measure per pixel
 counts <- df %>%
   group_by(lon, lat) %>%
   summarise(n_times = n(), .groups = "drop")
@@ -25,15 +36,17 @@ floored_counts <- counts %>%
   filter(n_times < n_obs_floor)
 
 # 
-floored_df <- data %>%
-  filter(paste(lon, lat) %in% paste(floored_counts$lon,
-                                    floored_counts$lat))
+floored_df <- df %>%
+  filter(
+    paste(lon, lat) %in% paste(floored_counts$lon,
+                               floored_counts$lat)
+  )
+
 # All the "sufficient measurements" time series
 timeseries <- floored_df %>%
   arrange(lon, lat, time) %>%
   group_by(lon, lat) %>%
   group_split()
-
 
 
 #@@@@@@@@@@@@@@@@@@@@@
@@ -50,9 +63,23 @@ ggplot(counts, aes(x = n_times)) +
   ) +
   theme_bw()
 
-# Map of the measurements
-ggplot(counts, aes(x = lon, y = lat, fill = n_times)) +
-  geom_tile() +
+# Distribution of the number of measurements per month
+ggplot(floored_df, aes(x = time)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "steelblue") +
+  labs(
+    x = "Time step",
+    y = "Number of observations",
+    title = "Distribution of observations over time"
+  ) +
+  theme_bw()
+
+ggplot(counts, aes(x = lon, y = lat)) +
+  geom_tile(aes(fill = n_times)) +
+  geom_tile(
+    data = missing_pixels,
+    aes(x = lon, y = lat),
+    fill = "orange"
+  ) +
   scale_fill_viridis_c(
     name = "Number of\ntime observations"
   ) +
@@ -78,7 +105,6 @@ ggplot(floored_counts, aes(x = lon, y = lat, fill = n_times)) +
   ) +
   theme_bw()
 
-length(timeseries)
 
 # First time series
 ggplot(timeseries[[3]], aes(x = time, y = fco2)) +
