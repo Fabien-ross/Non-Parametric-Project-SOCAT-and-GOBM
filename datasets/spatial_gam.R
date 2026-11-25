@@ -12,7 +12,7 @@ filename = "SOCAT2025_gridded_restricted.csv"
 df <- read.csv(filename, header=TRUE)
 lon <- read.csv("lon_grid.csv", header=TRUE)
 lat <- read.csv("lat_grid.csv", header=TRUE)
-time <- 1:660
+
 all_pixels <- expand.grid(
   lon = lon[[1]],
   lat = lat[[1]]
@@ -62,7 +62,6 @@ max_time <- floored_df %>%
 spatial_max <- floored_df %>%
   filter(time == max_time$time)
 
-head(spatial_max)
 
 ##################
 
@@ -108,18 +107,30 @@ library(splines)
 library(mgcv)
 
 gam_fit <- gam(
-  fco2 ~ s(lon, lat, bs = "tp", k = 100),
+  fco2 ~ s(lon, lat, time, bs = "tp", k = 100),
   data = floored_df,
   method = "REML"
 )
 summary(gam_fit)
 
+time <- seq(100,660, by=5)
+
+full_grid <- expand.grid(
+  lon = lon[[1]],
+  lat = lat[[1]],
+  time = time
+)
 
 # Predict fCO2
-pred_grid <- all_pixels
-pred_grid$fco2_pred <- predict(gam_fit, newdata = all_pixels)
+pred_grid <- full_grid
+pred_grid$fco2_pred <- predict(gam_fit, newdata = pred_grid)
 
-ggplot(pred_grid, aes(x = lon, y = lat, fill = fco2_pred)) +
+head(pred_grid)
+
+library(viridis)
+
+ggplot(pred_grid[pred_grid$time == time[100], ],
+       aes(x = lon, y = lat, fill = fco2_pred)) +
   geom_raster() +
   scale_fill_viridis_c(
     name = expression(paste("Predicted fCO"[2]))
@@ -134,6 +145,57 @@ ggplot(pred_grid, aes(x = lon, y = lat, fill = fco2_pred)) +
     x = "Longitude",
     y = "Latitude",
     title = "Spatial distribution of predicted fCO2",
-    subtitle = "GAM predictions"
+    subtitle = paste("Time:", time[1])
   ) +
   theme_bw()
+
+######## GIF
+
+library(gganimate)
+library(gifski)
+
+p <- ggplot(pred_grid,
+            aes(x = lon, y = lat, fill = fco2_pred)) +
+  
+  geom_raster() +
+  
+  scale_fill_viridis_c(
+    name = expression(paste("Predicted fCO"[2])),
+    limits = range(pred_grid$fco2_pred, na.rm = TRUE)
+  ) +
+  
+  geom_tile(
+    data = missing_pixels,
+    aes(x = lon, y = lat),
+    fill = "orange"
+  ) +
+  
+  coord_fixed() +
+  
+  labs(
+    x = "Longitude",
+    y = "Latitude",
+    title = "Spatial distribution of predicted fCO2",
+    subtitle = "Time: {current_frame}"
+  ) +
+  
+  theme_bw() +
+  
+  transition_manual(time)
+
+# Generate GIF
+anim <- animate(
+  p,
+  nframes = length(unique(pred_grid$time)),
+  fps = 5,
+  width = 900,
+  height = 700,
+  renderer = gifski_renderer()
+)
+
+anim_save("fCO2_animation.gif", animation = anim)
+
+anim_save(
+  filename = file.path(getwd(), "fCO2_animation.gif"),
+  animation = anim
+)
