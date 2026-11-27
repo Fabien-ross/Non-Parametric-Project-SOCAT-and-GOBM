@@ -1,3 +1,7 @@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# GAM representation
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets")
 
 library(data.table)
@@ -24,7 +28,6 @@ missing_pixels <- anti_join(
   distinct(df, lon, lat),
   by = c("lon", "lat")
 )
-
 
 # Count the number of measure per square
 counts <- df %>%
@@ -106,8 +109,9 @@ ggplot(spatial_max, aes(x = lon, y = lat)) +
 library(splines)
 library(mgcv)
 
+# Thin Plate Regression Spline
 gam_fit <- gam(
-  fco2 ~ s(lon, lat, time, bs = "tp", k = 100),
+  fco2 ~ s(lon, lat, time, bs = "tp", k = 100) + s(time, bs = "tp", k = 30),
   data = floored_df,
   method = "REML"
 )
@@ -196,6 +200,6 @@ anim <- animate(
 anim_save("fCO2_animation.gif", animation = anim)
 
 anim_save(
-  filename = file.path(getwd(), "fCO2_animation.gif"),
+  filename = file.path(getwd(), "fCO2_animation_2.gif"),
   animation = anim
 )

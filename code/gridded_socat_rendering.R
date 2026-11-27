@@ -1,4 +1,4 @@
-setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets")
+setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project")
 setwd("~/Documents/Politecnico di Milano/NS/Non-Parametric-Project-SOCAT-and-GOBM")
 
 library(data.table)
@@ -8,16 +8,17 @@ library(rnaturalearth)
 library(tidyr)
 library(dplyr)
 
-filename = "SOCAT2025_gridded_restricted.csv"
+socat <- read.csv("datasets/socat_clean.csv", header=TRUE)
+gobm <- read.csv("datasets/gobm_clean.csv", header=TRUE)
+lon <- read.csv("datasets/lon_grid.csv", header=TRUE)
+lat <- read.csv("datasets/lat_grid.csv", header=TRUE)
 
-df <- read.csv(filename, header=TRUE)
-lon <- read.csv("lon_grid.csv", header=TRUE)
-lat <- read.csv("lat_grid.csv", header=TRUE)
-time <- 1:660
 all_pixels <- expand.grid(
   lon = lon[[1]],
   lat = lat[[1]]
 )
+
+head(gobm)
 
 # %%%%%%%%%%%%%% Continents and islands
 missing_pixels <- anti_join(
@@ -26,8 +27,14 @@ missing_pixels <- anti_join(
   by = c("lon", "lat")
 )
 
+missing_pixels <- gobm %>%
+  filter(is.na(sfco2)) %>%
+  distinct(lon, lat)
+
+dim(missing_pixels)
+
 # %%%%%%%%%%%%%% Count the number of measure per pixel
-counts <- df %>%
+counts <- socat %>%
   group_by(lon, lat) %>%
   summarise(n_times = n(), .groups = "drop")
 
@@ -37,15 +44,15 @@ floored_counts <- counts %>%
   filter(n_times < n_obs_floor)
 
 # 
-floored_df <- df %>%
+floored_socat <- socat %>%
   filter(
     paste(lon, lat) %in% paste(floored_counts$lon,
                                floored_counts$lat)
   )
 
 # All the "sufficient measurements" time series
-timeseries <- floored_df %>%
-  arrange(lon, lat, time) %>%
+timeseries <- floored_socat %>%
+  arrange(lon, lat, date) %>%
   group_by(lon, lat) %>%
   group_split()
 
@@ -65,7 +72,7 @@ ggplot(counts, aes(x = n_times)) +
   theme_bw()
 
 # Distribution of the number of measurements per month
-ggplot(floored_df, aes(x = time)) +
+ggplot(floored_df, aes(x = date)) +
   geom_histogram(binwidth = 1, color = "black", fill = "steelblue") +
   labs(
     x = "Time step",
