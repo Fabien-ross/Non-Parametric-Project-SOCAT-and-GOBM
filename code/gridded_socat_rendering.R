@@ -72,7 +72,7 @@ ggplot(counts, aes(x = n_times)) +
   theme_bw()
 
 # Distribution of the number of measurements per month
-ggplot(floored_df, aes(x = date)) +
+ggplot(floored_df, aes(x = time)) +
   geom_histogram(binwidth = 1, color = "black", fill = "steelblue") +
   labs(
     x = "Time step",
