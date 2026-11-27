@@ -16,26 +16,11 @@ gobm <- read.csv("datasets/gobm_clean.csv", header=TRUE)
 lon <- read.csv("datasets/lon_grid.csv", header=TRUE)
 lat <- read.csv("datasets/lat_grid.csv", header=TRUE)
 
-gobm <- gobm %>%
-  mutate(
-    date = as.Date(date),
-    time = (year(date) - 2000) * 12 + month(date)
-  )
-
-socat <- socat %>%
-  mutate(
-    date = as.Date(date),
-    time = (year(date) - 2000) * 12 + month(date)
-  )
-
-write.csv(socat, "datasets/socat_clean.csv", row.names = FALSE)
-write.csv(gobm, "datasets/gobm_clean.csv", row.names = FALSE)
-
-
 all_pixels <- expand.grid(
   lon = lon[[1]],
   lat = lat[[1]]
 )
+
 time <- unique(socat$time)
 time_gobm <- unique(gobm$time)
 
@@ -129,6 +114,7 @@ ggplot(spatial_max, aes(x = lon, y = lat)) +
 ################# GAM
 library(splines)
 library(mgcv)
+library(viridis)
 
 # Thin Plate Regression Spline
 gam_fit <- gam(
@@ -138,11 +124,19 @@ gam_fit <- gam(
 )
 summary(gam_fit)
 
-full_grid <- expand.grid(
+full_grid_half_time <- expand.grid(
+  lon = lon[[1]],
+  lat = lat[[1]],
+  time = time[(time%%12)/2==0]
+)
+
+full_grid_full_time <- expand.grid(
   lon = lon[[1]],
   lat = lat[[1]],
   time = time
 )
+
+dim(full_grid)
 
 # Predict fCO2
 pred_grid <- full_grid
@@ -150,9 +144,7 @@ pred_grid$fco2_pred <- predict(gam_fit, newdata = pred_grid)
 
 head(pred_grid)
 
-library(viridis)
-
-ggplot(pred_grid[pred_grid$time == time[100], ],
+ggplot(pred_grid[pred_grid$time == 207, ],
        aes(x = lon, y = lat, fill = fco2_pred)) +
   geom_raster() +
   scale_fill_viridis_c(
@@ -177,6 +169,7 @@ ggplot(pred_grid[pred_grid$time == time[100], ],
 library(gganimate)
 library(gifski)
 
+# SOCAT print
 p <- ggplot(pred_grid,
             aes(x = lon, y = lat, fill = fco2_pred)) +
   
@@ -185,6 +178,36 @@ p <- ggplot(pred_grid,
   scale_fill_viridis_c(
     name = expression(paste("Predicted fCO"[2])),
     limits = range(pred_grid$fco2_pred, na.rm = TRUE)
+  ) +
+  
+  geom_tile(
+    data = missing_pixels,
+    aes(x = lon, y = lat),
+    fill = "orange"
+  ) +
+  
+  coord_fixed() +
+  
+  labs(
+    x = "Longitude",
+    y = "Latitude",
+    title = "Spatial distribution of predicted fCO2",
+    subtitle = "Time: {current_frame}"
+  ) +
+  
+  theme_bw() +
+  
+  transition_manual(time)
+
+# GOBM print
+p <- ggplot(gobm,
+            aes(x = lon, y = lat, fill = sfco2)) +
+  
+  geom_raster() +
+  
+  scale_fill_viridis_c(
+    name = expression(paste("Predicted fCO"[2])),
+    limits = range(gobm$sfco2, na.rm = TRUE)
   ) +
   
   geom_tile(
@@ -216,9 +239,9 @@ anim <- animate(
   renderer = gifski_renderer()
 )
 
-anim_save("fCO2_animation.gif", animation = anim)
+anim_save("fCO2_animation_3.gif", animation = anim)
 
 anim_save(
-  filename = file.path(getwd(), "fCO2_animation_2.gif"),
+  filename = file.path(getwd(), "gobm_fCO2_animation_3.gif"),
   animation = anim
 )
