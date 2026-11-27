@@ -2,7 +2,7 @@
 # GAM representation
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project/datasets")
+setwd("C:/Users/ROSSET/Documents/Docs/Polimi/Stats/Project")
 
 library(data.table)
 library(ggplot2)
@@ -11,16 +11,33 @@ library(rnaturalearth)
 library(tidyr)
 library(dplyr)
 
-filename = "SOCAT2025_gridded_restricted.csv"
+socat <- read.csv("datasets/socat_clean.csv", header=TRUE)
+gobm <- read.csv("datasets/gobm_clean.csv", header=TRUE)
+lon <- read.csv("datasets/lon_grid.csv", header=TRUE)
+lat <- read.csv("datasets/lat_grid.csv", header=TRUE)
 
-df <- read.csv(filename, header=TRUE)
-lon <- read.csv("lon_grid.csv", header=TRUE)
-lat <- read.csv("lat_grid.csv", header=TRUE)
+gobm <- gobm %>%
+  mutate(
+    date = as.Date(date),
+    time = (year(date) - 2000) * 12 + month(date)
+  )
+
+socat <- socat %>%
+  mutate(
+    date = as.Date(date),
+    time = (year(date) - 2000) * 12 + month(date)
+  )
+
+write.csv(socat, "datasets/socat_clean.csv", row.names = FALSE)
+write.csv(gobm, "datasets/gobm_clean.csv", row.names = FALSE)
+
 
 all_pixels <- expand.grid(
   lon = lon[[1]],
   lat = lat[[1]]
 )
+time <- unique(socat$time)
+time_gobm <- unique(gobm$time)
 
 # %%%%%%%%%%%%%% Continents and islands
 missing_pixels <- anti_join(
@@ -29,8 +46,12 @@ missing_pixels <- anti_join(
   by = c("lon", "lat")
 )
 
-# Count the number of measure per square
-counts <- df %>%
+gobm_na_pixels <- gobm %>%
+  filter(is.na(sfco2)) %>%
+  distinct(lon, lat)
+
+# %%%%%%%%%%%%%% Count the number of measure per pixel
+counts <- socat %>%
   group_by(lon, lat) %>%
   summarise(n_times = n(), .groups = "drop")
 
@@ -40,33 +61,33 @@ floored_counts <- counts %>%
   filter(n_times < n_obs_floor)
 
 # 
-floored_df <- df %>%
+floored_socat <- socat %>%
   filter(
     paste(lon, lat) %in% paste(floored_counts$lon,
                                floored_counts$lat)
   )
 
 # All the "sufficient measurements" time series
-timeseries <- floored_df %>%
-  arrange(lon, lat, time) %>%
+timeseries <- floored_socat %>%
+  arrange(lon, lat, date) %>%
   group_by(lon, lat) %>%
   group_split()
 
-
-spatial_by_month <- floored_df %>%
+spatial_by_month <- floored_socat %>%
   arrange(lon, lat, time) %>%
   group_by(time) %>%
   group_split()
 
-max_time <- floored_df %>%
+
+################## PLOTS
+
+# Plot the month with the maximum observations
+max_time <- floored_socat %>%
   count(time, name = "n_observations") %>%
   slice_max(n_observations, n = 1)
 
-spatial_max <- floored_df %>%
+spatial_max <- floored_socat %>%
   filter(time == max_time$time)
-
-
-##################
 
 ggplot(spatial_max, aes(x = lon, y = lat)) +
   geom_tile(fill = "black") +
@@ -112,12 +133,10 @@ library(mgcv)
 # Thin Plate Regression Spline
 gam_fit <- gam(
   fco2 ~ s(lon, lat, time, bs = "tp", k = 100) + s(time, bs = "tp", k = 30),
-  data = floored_df,
+  data = floored_socat,
   method = "REML"
 )
 summary(gam_fit)
-
-time <- seq(100,660, by=5)
 
 full_grid <- expand.grid(
   lon = lon[[1]],

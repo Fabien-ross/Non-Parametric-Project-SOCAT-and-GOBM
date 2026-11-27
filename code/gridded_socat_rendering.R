@@ -27,11 +27,9 @@ missing_pixels <- anti_join(
   by = c("lon", "lat")
 )
 
-missing_pixels <- gobm %>%
+gobm_na_pixels <- gobm %>%
   filter(is.na(sfco2)) %>%
   distinct(lon, lat)
-
-dim(missing_pixels)
 
 # %%%%%%%%%%%%%% Count the number of measure per pixel
 counts <- socat %>%
@@ -72,7 +70,7 @@ ggplot(counts, aes(x = n_times)) +
   theme_bw()
 
 # Distribution of the number of measurements per month
-ggplot(floored_df, aes(x = time)) +
+ggplot(floored_socat, aes(x = time)) +
   geom_histogram(binwidth = 1, color = "black", fill = "steelblue") +
   labs(
     x = "Time step",

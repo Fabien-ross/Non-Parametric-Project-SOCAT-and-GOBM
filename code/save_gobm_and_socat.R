@@ -107,6 +107,7 @@ sort(unique(socat_clean$lon))
 sort(unique(gobm_clean$date))
 sort(unique(socat_clean$date))
 
+
 # @@@@@@@@@@@@@@@@@@ WRITE IT
 
 write.csv(socat_clean, "datasets/socat_full_clean.csv", row.names = FALSE)
